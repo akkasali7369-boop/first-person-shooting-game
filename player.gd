@@ -3,7 +3,7 @@ extends CharacterBody3D
 const SPEED = 6.0
 const JUMP_VELOCITY = 6.0
 const MOUSE_SENSITIVITY = 0.003
-const TOUCH_SENSITIVITY = 0.006
+const TOUCH_SENSITIVITY = 0.0025
 const MAGAZINE_SIZE = 8
 const DAMAGE = 25
 const MAX_HEALTH = 100
@@ -43,6 +43,7 @@ var footstep_sounds = [
 @onready var resume_button = $"../CanvasLayer/PauseMenu/CenterContainer/VBoxContainer/ResumeButton"
 @onready var menu_button = $"../CanvasLayer/PauseMenu/CenterContainer/VBoxContainer/MenuButton"
 
+@onready var touch_controls = $"../CanvasLayer/TouchControls"
 @onready var joystick = $"../CanvasLayer/TouchControls/Joystick"
 @onready var shoot_button = $"../CanvasLayer/TouchControls/ShootButton"
 @onready var jump_button = $"../CanvasLayer/TouchControls/JumpButton"
@@ -70,13 +71,14 @@ func _ready():
 		reload_button.pressed.connect(_on_reload_button_pressed)
 
 
-func _input(event):
+func _unhandled_input(event):
 	if event is InputEventKey and event.pressed and event.keycode == KEY_F1:
 		if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		else:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		return
+
 	if is_dead:
 		if event is InputEventKey and event.pressed and event.keycode == KEY_ENTER:
 			get_tree().reload_current_scene()
@@ -89,7 +91,7 @@ func _input(event):
 	if get_tree().paused:
 		return
 
-	if event is InputEventMouseMotion:
+	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		rotate_y(-event.relative.x * MOUSE_SENSITIVITY)
 		head.rotate_x(-event.relative.y * MOUSE_SENSITIVITY)
 		head.rotation.x = clamp(head.rotation.x, deg_to_rad(-89), deg_to_rad(89))
@@ -101,7 +103,7 @@ func _input(event):
 			head.rotate_x(-event.relative.y * TOUCH_SENSITIVITY)
 			head.rotation.x = clamp(head.rotation.x, deg_to_rad(-89), deg_to_rad(89))
 
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		shoot()
 
 	if event is InputEventKey and event.pressed and event.keycode == KEY_R:
@@ -131,6 +133,7 @@ func toggle_pause():
 	var new_pause_state = not get_tree().paused
 	get_tree().paused = new_pause_state
 	pause_menu.visible = new_pause_state
+	touch_controls.visible = not new_pause_state
 
 	if new_pause_state:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -141,6 +144,7 @@ func toggle_pause():
 func _on_resume_button_pressed():
 	get_tree().paused = false
 	pause_menu.visible = false
+	touch_controls.visible = true
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
